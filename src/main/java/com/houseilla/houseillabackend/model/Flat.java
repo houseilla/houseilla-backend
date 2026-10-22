@@ -1,28 +1,21 @@
 package com.houseilla.houseillabackend.model;
 
 import jakarta.persistence.*;
-import lombok.*;
-import java.io.Serializable;
-
-@Data
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "Flats")
-public class Flat implements Serializable {
+@PrimaryKeyJoinColumn(name = "detail_id") // Automatically joins subclass fields to the base table
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class Flat extends PropertyDetail {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "flat_id")
-    private int flatId;
-
-    @Column(name = "advertisement_id")
-    private int advertisementId;
-
-    @Column(name = "is_resale")
-    private int isResale = -1;
+    @Column(name = "is_rent")
+    private int isRent;
 
     @Column(name = "is_community")
-    private int isCommunity = -1;
+    private int isCommunity;
 
     @Column(name = "building_rising")
     private int buildingRising;
@@ -48,7 +41,6 @@ public class Flat implements Serializable {
     @Column(name = "property_age")
     private int propertyAge;
 
-    @Column(name = "aminities")
-    private String aminities;
-
+    @Column(name = "amenities", length = 1000)
+    private String amenities;
 }

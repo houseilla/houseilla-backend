@@ -7,6 +7,7 @@ import com.houseilla.houseillabackend.service.AdvertiserServices;
 import com.houseilla.houseillabackend.service.OtpService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,14 +16,11 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*",
-        methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.OPTIONS})
-
+@RequestMapping("/api/v1/auth") // 🌟 Standardized versioned route path mapping
 public class AuthController {
 
     @Autowired
-    private OtpService otpService; // Polmorphic implementation handled dynamically by active Spring profile
+    private OtpService otpService;
 
     @Autowired
     private AdvertiserServices advertiserServices;
@@ -30,10 +28,10 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    // Maps explicitly to: POST /api/v1/auth/send-otp
     @PostMapping("/send-otp")
     public ResponseEntity<Map<String, Object>> sendOtp(@RequestBody OtpRequest otpRequest) {
-
-        log.info("Sent OTP Request to  : {}" , otpRequest.toString());
+        log.info("Sent OTP Request to: {}", otpRequest.toString());
         Map<String, Object> jsonResponse = new HashMap<>();
 
         String cleanPhone = otpRequest.getPhone() != null ? otpRequest.getPhone().trim() : "";
@@ -46,23 +44,21 @@ public class AuthController {
         }
 
         try {
-            // Process dynamically across selected service target logic profile bounds
             otpService.processOtpRequest(cleanEmail, cleanPhone);
-
             jsonResponse.put("success", true);
-            jsonResponse.put("message", "Verification code generated successfully.");
-            return ResponseEntity.ok(jsonResponse);
-        } catch (Exception exception) {
+            return ResponseEntity.ok().body(jsonResponse);
+        } catch (Exception e) {
+            log.error("Failed to process OTP request", e);
             jsonResponse.put("success", false);
-            jsonResponse.put("message", "Error triggering verification generation pipeline: " + exception.getMessage());
-            return ResponseEntity.internalServerError().body(jsonResponse);
+            jsonResponse.put("message", "Internal server error processing OTP.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(jsonResponse);
         }
     }
 
+    // Maps explicitly to: POST /api/v1/auth/verify-otp
     @PostMapping("/verify-otp")
     public ResponseEntity<Map<String, Object>> verifyOtp(@RequestBody OtpRequest otpRequest) {
-
-        log.info("Verify OTP Request to  : {}" , otpRequest.toString());
+        log.info("Verify OTP Request to: {}", otpRequest.toString());
         Map<String, Object> jsonResponse = new HashMap<>();
 
         String cleanEmail = otpRequest.getEmail() != null ? otpRequest.getEmail().trim().toLowerCase() : "";
@@ -75,24 +71,26 @@ public class AuthController {
             return ResponseEntity.badRequest().body(jsonResponse);
         }
 
-        // Call active configuration validator execution logic block
         boolean isValid = otpService.validateOtpCode(cleanEmail, submittedCode);
 
         if (isValid) {
             jsonResponse.put("success", true);
             jsonResponse.put("message", "Advertiser successfully identified.");
+
             String realToken = jwtUtil.generateToken(cleanEmail, cleanPhone);
-            log.info("Generated JWT Token : {}", realToken);
+            log.info("Generated JWT Token: {}", realToken);
             jsonResponse.put("jwtToken", realToken);
 
-            Advertiser existingAdvertiser = advertiserServices.getAdvertiserByPhoneNo(cleanPhone);
+            // 🌟 FIX: Lookup profile directly via the verified email string variable context
+            Advertiser existingAdvertiser = advertiserServices.getAdvertiserByEmail(cleanEmail);
+
             if (existingAdvertiser != null) {
-                log.info("Advertiser already exists for phone : {} ", cleanPhone);
-                jsonResponse.put("isPreExisting", true);
+                log.info("Advertiser already exists for email: {} , advertiser : {} ", cleanEmail, existingAdvertiser);
+                jsonResponse.put("isProfileExisting", true);
                 jsonResponse.put("advertiser", existingAdvertiser);
             } else {
-                log.info("Advertiser does not exist for phone : {} ", cleanPhone);
-                jsonResponse.put("isPreExisting", false);
+                log.info("Advertiser does not exist for email: {}", cleanEmail);
+                jsonResponse.put("isProfileExisting", false);
                 jsonResponse.put("advertiser", null);
             }
 
@@ -101,6 +99,6 @@ public class AuthController {
 
         jsonResponse.put("success", false);
         jsonResponse.put("message", "The verification code entered is incorrect or has expired.");
-        return ResponseEntity.status(401).body(jsonResponse);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonResponse);
     }
 }

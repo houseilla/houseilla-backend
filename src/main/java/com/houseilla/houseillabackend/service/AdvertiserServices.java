@@ -16,31 +16,13 @@ public class AdvertiserServices {
 	AdvertiserRepository advertiserRepository;
 
 	public AdvertiserServices() {}
-	
-	public Advertiser getAdvertiserByPhoneNo(String phoneNo) {
-        Advertiser advertiser = advertiserRepository.findByPhone(phoneNo);
-		return advertiser;
-	}
-	
-	public Advertiser getAdvertiserByAdvertiserId(int advertiser_id) {
-		return (Advertiser) advertiserRepository.findByAdvertiserId(advertiser_id);
+
+	public Advertiser getAdvertiserByEmail(String email) {
+		// 🌟 Calls your newly defined repository query method directly
+		return advertiserRepository.findByEmail(email);
 	}
 
 	public Advertiser saveAdvertiser(Advertiser advertiser) {
 		return advertiserRepository.save(advertiser);
-	}
-	
-	public List<Advertiser> allAdvertisers() {
-		return advertiserRepository.findAll();
-	}
-
-	// Java
-	@Transactional
-	public void updateAdvertiserPhotos(int advertiserId, List<byte[]> photos) {
-		Advertiser advertiser = advertiserRepository.findByAdvertiserId(advertiserId);
-		if (advertiser != null) {
-			//advertiser.setPhotos(photos);
-			advertiserRepository.save(advertiser);
-		}
 	}
 }

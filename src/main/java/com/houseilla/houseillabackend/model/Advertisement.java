@@ -1,95 +1,83 @@
 package com.houseilla.houseillabackend.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
 import java.io.Serializable;
-import java.io.Serial;
 import java.sql.Timestamp;
 import java.util.List;
 
-@Data
-
 @Entity
 @Table(name = "advertisements")
+@Data // Generates getters, setters, toString, equals, and hashCode automatically
 public class Advertisement implements Serializable {
-
-	@Serial
-	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "advertisement_id")
 	private int advertisementId;
 
-	@Column(name = "advertiser_id")
-	private int advertiserId;
+	// RULE 1: Clean foreign key relationship to the real Advertiser entity
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "advertiser_id", nullable = false)
+	private Advertiser advertiser;
 
-	@Column(name = "advertiser_name")
-	private String advertiserName;
+	// RULE 2: Managed relationship to an optional list of structural images
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+	@JoinColumn(name = "advertisement_id")
+	private List<AdvertisementImage> images;
 
-	@Column(name = "is_premium")
-	private int isPremium;
+	// RULE 3 & 4: Core Shared Categorization Fields
+	@Column(name = "category")
+	private int category;     // 1 = Private, 2 = Commercial
 
-	@Column(name = "advertiser_type")
-	private int advertiserType;
+	@Column(name = "property_type")
+	private int propertyType; // Sub-type ID mapping indicator
 
-	@Column(name = "advertiser_phone")
-	private String advertiserPhone;
+	// 🌟 THE UNIFIED REPLACEMENT FIELD FOR THE 6 SUB-TYPES
+	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+	@JoinColumn(name = "property_detail_id")
+	private PropertyDetail propertyDetail;
 
-	@Column(name = "advertiser_email")
-	private String advertiserEmail;
+	// Core Baseline Properties
+	@Column(name = "price")
+	private double price;
 
-	//Adress
+	@Column(name = "description", length = 1000)
+	private String description;
+
+	// Address & Geolocation Context
 	@Column(name = "property_number")
 	private String propertyNumber;
 
 	@Column(name = "area_name")
 	private String areaName;
 
-	@Column(name = "address_line_1")
+	@Column(name = "address_line1")
 	private String addressLine1;
 
-	@Column(name = "address_line_2")
+	@Column(name = "address_line2")
 	private String addressLine2;
 
 	@Column(name = "district")
 	private String district;
 
-	@Column(name = "postal_code")
+	@Column(name = "pincode")
 	private String pincode;
 
 	@Column(name = "latitude")
-	private Double latitude;
+	private double latitude;
 
 	@Column(name = "longitude")
-	private Double longitude;
+	private double longitude;
 
-	//Advertisement Type and Purpose
+	// Premium Feature Flag
+	@Column(name = "is_premium")
+	private int isPremium;
 
-	@Column(name = "category")
-	private int category = -1;
-
-	@Column(name = "property_type")
-	private int propertyType = -1;
-
-	@Column(name = "purpose")
-	private int purpose = -1;
-
-	@Column(name = "price")
-	private double price;
-
-	@Column(name = "description")
-	private String description;
-
+	// System Timestamps
 	@Column(name = "update_date")
 	private Timestamp updateDate;
 
 	@Column(name = "create_date")
 	private Timestamp createDate;
-
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-	@JoinColumn(name = "advertisement_id") // Maps to the foreign key column in ADVERTISEMENT_IMAGE table
-	private List<AdvertisementImage> images;
-
 }
-

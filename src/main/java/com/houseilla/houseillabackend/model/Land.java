@@ -2,27 +2,22 @@ package com.houseilla.houseillabackend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
-import java.io.Serializable;
+import lombok.EqualsAndHashCode;
 
 @Entity
-@Table(name = "lands") // Explicit snake_case table name
+@Table(name = "lands")
+@PrimaryKeyJoinColumn(name = "detail_id") // Joins directly to the polymorphic base table
 @Data
-public class Land implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+public class Land extends PropertyDetail {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "land_id")
-    private int landId;
-
-    @Column(name = "advertisement_id")
-    private int advertisementId;
-
+    // 1 = Private Land, 2 = Commercial Land
+    @Column(name = "type")
     private int type;
 
     @Column(name = "area")
     private double area;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 1000)
     private String description;
 }
