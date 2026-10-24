@@ -40,7 +40,7 @@ public class AdvertiserController {
         Advertiser savedAdvertiser = advertiserServices.saveAdvertiser(advertiser);
 
         if (Objects.nonNull(savedAdvertiser)) {
-            log.info("Success! Committed profile database row details: {}", savedAdvertiser.toString());
+            log.info("Success! Committed profile database row details: {}", savedAdvertiser.getAdvertiserId());
             return ResponseEntity.ok().body(savedAdvertiser);
         }
 
