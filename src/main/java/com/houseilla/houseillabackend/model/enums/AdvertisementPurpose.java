@@ -2,14 +2,14 @@ package com.houseilla.houseillabackend.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum AdvertisementePurpose {
+public enum AdvertisementPurpose {
     SALE(0),
     RENT(1),
     LEASE(2);
 
     private final int value;
 
-    AdvertisementePurpose(int value) {
+    AdvertisementPurpose(int value) {
         this.value = value;
     }
 

@@ -1,4 +1,4 @@
-package com.houseilla.houseillabackend.test;
+package com.houseilla.houseillabackend;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;

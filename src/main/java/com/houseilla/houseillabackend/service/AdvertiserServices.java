@@ -1,46 +1,42 @@
 package com.houseilla.houseillabackend.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.houseilla.houseillabackend.model.Advertiser;
 import com.houseilla.houseillabackend.repository.AdvertiserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 public class AdvertiserServices {
-	
-	@Autowired 
-	AdvertiserRepository advertiserRepository;
 
-	public AdvertiserServices() {}
+	@Autowired
+	private AdvertiserRepository advertiserRepository;
 
 	public Advertiser getAdvertiserByEmail(String email) {
-		// 🌟 Calls your newly defined repository query method directly
 		return advertiserRepository.findByEmail(email);
 	}
 
+	@Transactional
 	public Advertiser saveAdvertiser(Advertiser advertiser) {
-		// If it's a brand new profile registration, insert it directly
-		if (advertiser.getAdvertiserId() == 0) {
+		// Path 1: Handle New Registrations (ID is missing or explicitly sent as 0)
+		if (advertiser.getId() == null || advertiser.getId() == 0) {
+			advertiser.setId(null); // Strips the 0 so Hibernate triggers a clean auto-increment INSERT
 			return advertiserRepository.save(advertiser);
 		}
 
-		// If it's an update, fetch the record first to keep lazy-loading collections intact
-		return advertiserRepository.findById(advertiser.getAdvertiserId())
+		// Path 2: Handle Secure Profile Updates
+		return advertiserRepository.findById(advertiser.getId())
 				.map(existingRecord -> {
-					// Manually map only the text profile fields changed in Wizard Step 2
 					existingRecord.setName(advertiser.getName());
-					//existingRecord.setEmail(advertiser.getEmail());
 					existingRecord.setPhone(advertiser.getPhone());
-					//existingRecord.setLocation(advertiser.getLocation());
-					existingRecord.setType(advertiser.getType());
-					existingRecord.setContractual(advertiser.getContractual());
-					//existingRecord.setAddress(advertiser.getAddress());
-
-					// This saves only the core fields and ignores the heavy advertisements collection
+					existingRecord.setLocation(advertiser.getLocation());
+					existingRecord.setAddress(advertiser.getAddress());
+					existingRecord.setAdvertiserType(advertiser.getAdvertiserType());
+					existingRecord.setContractualStatus(advertiser.getContractualStatus());
 					return advertiserRepository.save(existingRecord);
 				})
-				.orElseGet(() -> advertiserRepository.save(advertiser));
+				.orElseThrow(() -> new IllegalArgumentException("Target advertiser profile ID " + advertiser.getId() + " does not exist."));
 	}
-
 }

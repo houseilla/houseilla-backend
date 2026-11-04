@@ -1,44 +1,43 @@
 package com.houseilla.houseillabackend.model;
 
+import com.houseilla.houseillabackend.model.enums.AdvertiserContractual;
+import com.houseilla.houseillabackend.model.enums.AdvertiserType;
 import jakarta.persistence.*;
 import lombok.Data;
-import java.io.Serializable;
-import java.util.List;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Data
 @Entity
-@Table(name = "Advertisers")
-public class Advertiser implements Serializable {
-
-	private static final long serialVersionUID = 1L;
+@Table(name = "advertisers")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Advertiser {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "advertiser_id")
-	private int advertiserId;
+	private Long id;
 
-	@Column(name = "name")
+	@Column(nullable = false)
 	private String name;
 
-	@Column(name = "phone", unique = true)
+	@Column(nullable = false, unique = true, length = 15)
 	private String phone;
 
-	@Column(name = "email")
+	@Column(nullable = false, unique = true)
 	private String email;
 
-	@Column(name = "address")
+	@Column(columnDefinition = "TEXT")
 	private String address;
 
-	@Column(name = "location")
 	private String location;
 
-	@Column(name = "type")
-	private int type;
+	@Enumerated(EnumType.ORDINAL)
+	@Column(name = "advertiser_type", nullable = false)
+	private AdvertiserType advertiserType;
 
-	@Column(name = "contractual")
-	private int contractual;
-
-	// Bidirectional visibility tracking all listings published by this individual profile
-	@OneToMany(mappedBy = "advertiser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	private List<Advertisement> advertisements;
+	@Enumerated(EnumType.ORDINAL)
+	@Column(name = "contractual_status", nullable = false)
+	private AdvertiserContractual contractualStatus;
 }
+

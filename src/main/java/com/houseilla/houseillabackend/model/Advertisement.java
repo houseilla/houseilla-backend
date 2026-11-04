@@ -1,83 +1,92 @@
 package com.houseilla.houseillabackend.model;
 
+import com.houseilla.houseillabackend.model.enums.AdvertisementPropertyType;
+import com.houseilla.houseillabackend.model.enums.AdvertisementPurpose;
+import com.houseilla.houseillabackend.model.enums.AdvertisementStatus;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.io.Serializable;
-import java.sql.Timestamp;
-import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "advertisements")
-@Data // Generates getters, setters, toString, equals, and hashCode automatically
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Advertisement implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "advertisement_id")
-	private int advertisementId;
+	@Column(name = "id")
+	private Long id;
 
-	// RULE 1: Clean foreign key relationship to the real Advertiser entity
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "advertiser_id", nullable = false)
-	private Advertiser advertiser;
+	@Column(name = "advertiser_id", nullable = false)
+	private Long advertiserId;
 
-	// RULE 2: Managed relationship to an optional list of structural images
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-	@JoinColumn(name = "advertisement_id")
-	private List<AdvertisementImage> images;
+	@Enumerated(EnumType.ORDINAL)
+	@Column(name = "property_type", nullable = false)
+	private AdvertisementPropertyType propertyType;
 
-	// RULE 3 & 4: Core Shared Categorization Fields
-	@Column(name = "category")
-	private int category;     // 1 = Private, 2 = Commercial
+	@Enumerated(EnumType.ORDINAL)
+	@Column(name = "purpose", nullable = false)
+	private AdvertisementPurpose purpose;
 
-	@Column(name = "property_type")
-	private int propertyType; // Sub-type ID mapping indicator
+	@Enumerated(EnumType.ORDINAL)
+	@Column(name = "listing_status", nullable = false)
+	private AdvertisementStatus listingStatus = AdvertisementStatus.DRAFT;
 
-	// 🌟 THE UNIFIED REPLACEMENT FIELD FOR THE 6 SUB-TYPES
-	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-	@JoinColumn(name = "property_detail_id")
-	private PropertyDetail propertyDetail;
-
-	// Core Baseline Properties
-	@Column(name = "price")
-	private double price;
+	@Column(name = "price", nullable = false, precision = 15, scale = 2)
+	private BigDecimal price;
 
 	@Column(name = "description", length = 1000)
 	private String description;
 
-	// Address & Geolocation Context
 	@Column(name = "property_number")
 	private String propertyNumber;
 
-	@Column(name = "area_name")
+	@Column(name = "area_name", nullable = false)
 	private String areaName;
 
-	@Column(name = "address_line1")
+	@Column(name = "address_line_1", nullable = false)
 	private String addressLine1;
 
-	@Column(name = "address_line2")
+	@Column(name = "address_line_2")
 	private String addressLine2;
 
 	@Column(name = "district")
 	private String district;
 
-	@Column(name = "pincode")
+	@Column(name = "pincode", length = 10)
 	private String pincode;
 
-	@Column(name = "latitude")
-	private double latitude;
+	@Column(name = "latitude", precision = 10, scale = 7)
+	private BigDecimal latitude;
 
-	@Column(name = "longitude")
-	private double longitude;
+	@Column(name = "longitude", precision = 10, scale = 7)
+	private BigDecimal longitude;
 
-	// Premium Feature Flag
-	@Column(name = "is_premium")
-	private int isPremium;
+	@Column(name = "is_premium", nullable = false)
+	private int isPremium = 0; // 0 = Standard, 1 = Premium Feature Listing
 
-	// System Timestamps
 	@Column(name = "update_date")
-	private Timestamp updateDate;
+	private LocalDateTime updateDate;
 
-	@Column(name = "create_date")
-	private Timestamp createDate;
+	@Column(name = "create_date", updatable = false)
+	private LocalDateTime createDate;
+
+	@PrePersist
+	protected void onCreate() {
+		this.createDate = LocalDateTime.now();
+		this.updateDate = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		this.updateDate = LocalDateTime.now();
+	}
 }
