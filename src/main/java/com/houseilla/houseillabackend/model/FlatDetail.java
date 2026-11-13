@@ -23,9 +23,6 @@ public class FlatDetail implements Serializable {
     @Column(name = "advertisement_id", nullable = false, unique = true)
     private Long advertisementId;
 
-    @Column(name = "is_rent", nullable = false)
-    private boolean isRent;
-
     @Column(name = "is_community", nullable = false)
     private boolean isCommunity;
 
