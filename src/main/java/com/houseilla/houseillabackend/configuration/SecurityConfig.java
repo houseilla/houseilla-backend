@@ -26,6 +26,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Value("${houseilla.allowed.origins:http://localhost:5173,https://houseilla.in}")
     private String allowedOriginsStr;
 
+    
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 

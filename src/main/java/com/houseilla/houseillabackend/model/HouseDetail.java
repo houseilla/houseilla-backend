@@ -31,9 +31,6 @@ public class HouseDetail implements Serializable {
     @Column(name = "floors")
     private Integer floors;
 
-    @Column(name = "parkings")
-    private Integer parkings;
-
     @Column(name = "no_of_parking")
     private Integer noOfParking;
 

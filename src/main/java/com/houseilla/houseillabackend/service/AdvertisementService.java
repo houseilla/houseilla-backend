@@ -5,6 +5,10 @@ import com.houseilla.houseillabackend.model.enums.AdvertisementStatus;
 import com.houseilla.houseillabackend.repository.AdvertisementRepository;
 import com.houseilla.houseillabackend.repository.LandDetailRepository;
 import com.houseilla.houseillabackend.repository.FlatDetailRepository;
+import com.houseilla.houseillabackend.repository.HouseDetailRepository;
+import com.houseilla.houseillabackend.repository.OfficeDetailRepository;
+import com.houseilla.houseillabackend.repository.ShopDetailRepository;
+import com.houseilla.houseillabackend.repository.WarehouseDetailRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,18 @@ public class AdvertisementService {
 
 	@Autowired
 	private FlatDetailRepository flatDetailRepository;
+
+	@Autowired
+	private HouseDetailRepository houseDetailRepository;
+
+	@Autowired
+	private OfficeDetailRepository officeDetailRepository;
+
+	@Autowired
+	private ShopDetailRepository shopDetailRepository;
+
+	@Autowired
+	private WarehouseDetailRepository warehouseDetailRepository;
 
 
 	public List<Advertisement> getAdvertisementsByAdvertiserId(Long advertiserId) {
@@ -83,10 +99,16 @@ public class AdvertisementService {
 					flatDetailRepository.deleteByAdvertisementId(id);
 					break;
 				case HOUSE:
+					houseDetailRepository.deleteByAdvertisementId(id);
+					break;
 				case OFFICE:
+					officeDetailRepository.deleteByAdvertisementId(id);
+					break;
 				case SHOP:
+					shopDetailRepository.deleteByAdvertisementId(id);
+					break;
 				case WAREHOUSE:
-					// Plug in flatDetailRepository / houseDetailRepository / etc. deleteByAdvertisementId(id) as added
+					warehouseDetailRepository.deleteByAdvertisementId(id);
 					break;
 			}
 		}
