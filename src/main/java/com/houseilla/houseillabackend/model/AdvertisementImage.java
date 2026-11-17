@@ -27,13 +27,9 @@ public class AdvertisementImage implements Serializable {
     private String type;
 
     @Lob
-    @Column(name = "file", columnDefinition = "LONGBLOB")
-    private byte[] file; // Standardized variable name to match the encoder helper below
+    @Column(name = "file")
+    private byte[] file;
 
-    /**
-     * Tells Hibernate NOT to save this calculated property to the database layout.
-     * Combines the mime-type and base64 string into a browser-readable data URL.
-     */
     @Transient
     public String getBase64Data() {
         if (this.file == null || this.file.length == 0) {
