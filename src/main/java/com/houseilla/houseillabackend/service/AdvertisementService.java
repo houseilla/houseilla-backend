@@ -8,6 +8,7 @@ import com.houseilla.houseillabackend.model.LandDetail;
 import com.houseilla.houseillabackend.model.OfficeDetail;
 import com.houseilla.houseillabackend.model.ShopDetail;
 import com.houseilla.houseillabackend.model.WarehouseDetail;
+import com.houseilla.houseillabackend.model.enums.AdvertisementPurpose;
 import com.houseilla.houseillabackend.model.enums.AdvertisementStatus;
 import com.houseilla.houseillabackend.repository.AdvertisementImageRepository;
 import com.houseilla.houseillabackend.repository.AdvertisementRepository;
@@ -19,6 +20,11 @@ import com.houseilla.houseillabackend.repository.ShopDetailRepository;
 import com.houseilla.houseillabackend.repository.WarehouseDetailRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +48,110 @@ public class AdvertisementService {
         log.info("Fetching all advertisements for advertiser ID: {}", advertiserId);
         return advertisementRepository.findByAdvertiserId(advertiserId);
     }
+
+    @Transactional(readOnly = true)
+    public Page<Advertisement> searchActiveAdvertisements(
+            Integer purpose,
+            List<Integer> types,
+            String budget,
+            String pincode,
+            List<String> pincodes,
+            String q,
+            int page,
+            int size
+    ) {
+        log.info("Searching active advertisements | purpose={}, types={}, budget={}, pincode={}, pincodes={}, q={}, page={}, size={}",
+                purpose, types, budget, pincode, pincodes, q, page, size);
+
+        String trimmedPin = (pincode != null) ? pincode.trim() : "";
+        String searchLower = (q != null) ? q.trim().toLowerCase() : "";
+        List<String> cleanPincodes = (pincodes != null)
+                ? pincodes.stream().map(String::trim).filter(s -> !s.isEmpty()).toList()
+                : List.of();
+
+        List<Advertisement> matched = advertisementRepository.findAll().stream()
+                .filter(ad -> ad.getListingStatus() == AdvertisementStatus.ACTIVE)
+                .filter(ad -> purpose == null || (ad.getPurpose() != null && ad.getPurpose().ordinal() == purpose))
+                .filter(ad -> types == null || types.isEmpty()
+                        || (ad.getPropertyType() != null && types.contains(ad.getPropertyType().ordinal())))
+                .filter(ad -> matchesBudgetTier(ad, purpose, budget))
+                .filter(ad -> matchesLocation(ad, trimmedPin, cleanPincodes, searchLower))
+                .sorted((a, b) -> {
+                    int premiumCompare = Integer.compare(b.getIsPremium(), a.getIsPremium());
+                    if (premiumCompare != 0) return premiumCompare;
+                    return Long.compare(b.getId() != null ? b.getId() : 0L, a.getId() != null ? a.getId() : 0L);
+                })
+                .toList();
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.max(size, 1);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), matched.size());
+        List<Advertisement> pageContent = (start >= matched.size()) ? List.of() : matched.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, matched.size());
+    }
+
+    private boolean matchesBudgetTier(Advertisement ad, Integer purpose, String budget) {
+        if (budget == null || budget.isBlank() || ad.getPrice() == null) {
+            return true;
+        }
+        double price = ad.getPrice().doubleValue();
+        boolean isSale = (purpose != null && purpose == AdvertisementPurpose.SALE.ordinal())
+                || (purpose == null && ad.getPurpose() == AdvertisementPurpose.SALE);
+
+        if (isSale) {
+            double lakhs = price / 100000.0;
+            return switch (budget.trim()) {
+                case "1" -> lakhs < 50.0;
+                case "2" -> lakhs >= 50.0 && lakhs <= 100.0;
+                case "3" -> lakhs > 100.0 && lakhs <= 300.0;
+                case "4" -> lakhs > 300.0;
+                default -> true;
+            };
+        } else {
+            return switch (budget.trim()) {
+                case "1" -> price < 15000.0;
+                case "2" -> price >= 15000.0 && price <= 35000.0;
+                case "3" -> price > 35000.0 && price <= 75000.0;
+                case "4" -> price > 75000.0;
+                default -> true;
+            };
+        }
+    }
+
+    private boolean matchesLocation(Advertisement ad, String exactPin, List<String> pincodes, String q) {
+        String adPin = ad.getPincode() != null ? ad.getPincode().trim() : "";
+
+        if (!exactPin.isEmpty()) {
+            return adPin.equals(exactPin);
+        }
+
+        if (!q.isEmpty() || !pincodes.isEmpty()) {
+            boolean pinMatch = !pincodes.isEmpty() && pincodes.contains(adPin);
+            boolean textMatch = false;
+            if (!q.isEmpty()) {
+                textMatch = (ad.getAreaName() != null && ad.getAreaName().toLowerCase().contains(q))
+                        || (ad.getAddressLine1() != null && ad.getAddressLine1().toLowerCase().contains(q))
+                        || (ad.getAddressLine2() != null && ad.getAddressLine2().toLowerCase().contains(q))
+                        || (ad.getDistrict() != null && ad.getDistrict().toLowerCase().contains(q))
+                        || adPin.contains(q);
+            }
+            return pinMatch || textMatch;
+        }
+
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public Advertisement getAdvertisementById(Long id) {
+        return advertisementRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Advertisement record with ID " + id + " not found."));
+    }
+
 
     @Transactional
     public Advertisement saveAdvertisement(Advertisement advertisement) {

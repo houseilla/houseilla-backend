@@ -11,6 +11,8 @@ import com.houseilla.houseillabackend.model.WarehouseDetail;
 import com.houseilla.houseillabackend.service.AdvertisementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +34,32 @@ public class AdvertisementController {
         log.info("Request received to fetch advertisements for Advertiser ID: {}", advertiserId);
         List<Advertisement> listings = advertisementService.getAdvertisementsByAdvertiserId(advertiserId);
         return ResponseEntity.ok(listings);
+    }
+
+        @GetMapping
+    public ResponseEntity<Page<Advertisement>> searchAdvertisements(
+            @RequestParam(required = false) Integer purpose,
+            @RequestParam(required = false) List<Integer> types,
+            @RequestParam(required = false) String budget,
+            @RequestParam(required = false) String pincode,
+            @RequestParam(required = false) List<String> pincodes,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size
+    ) {
+        Page<Advertisement> results = advertisementService.searchActiveAdvertisements(
+                purpose, types, budget, pincode, pincodes, q, page, size
+        );
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Advertisement> getAdvertisementById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(advertisementService.getAdvertisementById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
